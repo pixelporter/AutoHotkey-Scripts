@@ -1,0 +1,68 @@
+; Swap FileNames (Uses Clipboard to Get File Paths)
+#F2::
+Clipboard := getclip()
+cnt = 0
+Loop, Parse, Clipboard, `n, `r
+{
+ok%A_Index% = 0
+If FileExist(A_Loopfield)
+{
+cnt++
+ok%A_Index% = 1
+fn%A_Index% = %A_Loopfield%
+}
+}
+if (cnt != 2 || ok1 = 0 || ok3 = 1)
+{
+MsgBox,,, ERROR`,%A_Space% %cnt%  File(s) were Selected!`n`n2 and Only 2 Files Must Be Selected to Swap FileNames, 3
+return
+}
+SplitPath, fn1,, Dir, Ext
+NewPath := Dir "\~~temp." Ext
+if (MoveFiles(fn1, NewPath , False) = "")
+ goto SwapAbort
+if MoveFiles(fn2, fn1 , False)
+ goto SwapAbort
+if MoveFiles(NewPath, fn2 , False)
+ goto SwapAbort
+MsgBox,,, File Names Successfully Swapped!, 3
+return
+
+SwapAbort:
+MsgBox, ERROR: Moving to %NewPath%`n`nOperation Aborted!
+return
+
+MoveFiles(OrigPath, NewPath, Overwrite = false)
+{
+; Move all the files (but not the folders):
+FileMove, %OrigPath%, %NewPath%, %Overwrite%
+ErrorCount := ErrorLevel
+return ErrorCount
+}
+
+getClip() ; More Reliable Clipboard Capture Function
+{
+cs = %Clipboard%
+clipboard := "" ; clears the clipboard
+While clipboard
+   Sleep 10 ; this sleep will repeat until the clipboard is cleared.
+tmax = 60
+TimeOut = 0
+While !clipboard AND (TimeOut < tmax) ; the loop will break once the clipboard is populated or when the TimeOut (3 seconds in this example) is reached.
+{
+Sendinput ^c
+Sleep 50 ; gives time for the clipboard to be populated, especially if it is large
+Timeout ++
+}
+if (timeout > tmax) || (Clipboard = "")
+{
+MsgBox,,, Clipboard is Empty!, 3
+Clipboard = %cs%
+return
+}
+else
+{
+VarSetCapacity(cs, 0)
+return %Clipboard%
+}
+}
